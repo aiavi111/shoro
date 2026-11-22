@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Шоро — концепт сайта</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sofia+Sans+Extra+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preload" as="image" href="maksym.jpg">
+<style>
+  :root{
+    --ink:#121212; --text:#55524D; --muted:#8A8782; --line:#E7E4DE; --soft:#F5F3EF;
+    --disp:'Sofia Sans Extra Condensed','Arial Narrow',Impact,sans-serif; --sans:Manrope,system-ui,sans-serif;
+    --ease:cubic-bezier(.16,1,.3,1);
+    --pad:clamp(18px,4vw,64px);
+    --sh:min(54vh,56vw);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  html.lenis,html.lenis body{height:auto}
+  html.lenis{scroll-behavior:auto}
+  .lenis.lenis-stopped{overflow:hidden}
+  body{background:#fff;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body.loading{overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  .cap{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+  .d{font-family:var(--disp);font-weight:800;text-transform:uppercase;line-height:.86}
+  .sdw{position:absolute;left:10%;right:10%;top:88.6%;height:7.6%;border-radius:50%;background:radial-gradient(closest-side,rgba(40,20,10,.30),rgba(40,20,10,.11) 55%,rgba(40,20,10,0))}
+
+  /* ---------- заставка ---------- */
+  .loader{position:fixed;inset:0;z-index:100;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;clip-path:inset(0);transition:clip-path 1.1s var(--ease) .1s}
+  .loader img{width:150px;display:block}
+  .loader .bar{width:170px;height:2px;background:var(--line);overflow:hidden}
+  .loader .bar i{display:block;height:100%;background:var(--ink);transform:scaleX(0);transform-origin:0 50%}
+  .loader .pct{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--muted);font-variant-numeric:tabular-nums}
+  .loader.done{clip-path:inset(0 0 100% 0);pointer-events:none}
+
+  /* ---------- цветной фон, который заливает экран от бутылки ---------- */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+  #bgB{clip-path:circle(0px at 50% 50%)}
+  .flood{position:fixed;inset:0;z-index:8;pointer-events:none;visibility:hidden;clip-path:circle(0px at 50% 50%)}
+
+  /* ---------- главная бутылка ---------- */
+  .stage{position:fixed;left:0;top:0;width:50vh;height:100vh;z-index:5;pointer-events:none;user-select:none;-webkit-user-select:none;transform-origin:0 0;will-change:transform,opacity;opacity:0}
+  .stage.lift{z-index:9}
+  /* бутылка рисуется на холсте с настоящей прозрачностью: слева в ролике цвет, справа — покадровая маска */
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+  .stage .src{position:absolute;inset:0;overflow:hidden;opacity:0;pointer-events:none}
+  .stage .src video{position:absolute;left:0;top:0;width:200%;height:100%;max-width:none;object-fit:fill;display:block}
+  .stage.nogl canvas{display:none}
+  .stage.nogl .src{opacity:1;-webkit-mask-image:url(matte.svg);mask-image:url(matte.svg);-webkit-mask-size:100% 100%;mask-size:100% 100%}
+  .stage.nogl .src video{opacity:0}
+  .stage.nogl .src video.on{opacity:1}
+  .stage .hit{position:absolute;left:24%;right:24%;top:9%;bottom:8%;pointer-events:auto;cursor:grab;touch-action:pan-y}
+  .stage .hit.grab{cursor:grabbing}
+  .stage.off .hit{pointer-events:none}
+  /* анимация вкуса: зёрна, молоко — поверх ряда бутылок */
+  .burst{position:fixed;left:0;top:0;z-index:6;pointer-events:none;mix-blend-mode:multiply;filter:brightness(1.02);opacity:0;transition:opacity .22s linear;
+    -webkit-mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent),linear-gradient(to bottom,transparent,#000 7%,#000 87%,transparent 99%);
+    -webkit-mask-composite:source-in;
+    mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent),linear-gradient(to bottom,transparent,#000 7%,#000 87%,transparent 99%);
+    mask-composite:intersect}
+  .burst.on{opacity:1}
+  .burst.b2{z-index:4}
+  .stage .fx{position:absolute;inset:0;transform-origin:50% 92%;will-change:transform}
+
+  /* ---------- шапка ---------- */
+  nav{position:fixed;inset:0 0 auto 0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:18px var(--pad);color:var(--ink);transition:background .4s,box-shadow .4s,padding .4s}
+  nav.solid{background:rgba(255,255,255,.88);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 1px 0 var(--line);padding-top:12px;padding-bottom:12px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand img{height:36px;display:block;transition:filter .5s}
+  .tag{padding:5px 9px;border-radius:999px;box-shadow:inset 0 0 0 1px currentColor;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.55}
+  .links{display:flex;gap:34px;font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+  .links a{position:relative;padding:6px 0}
+  .links a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;transform:scaleX(0);transform-origin:100% 50%;transition:transform .5s var(--ease)}
+  .links a:hover::after{transform:scaleX(1);transform-origin:0 50%}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 26px;border-radius:999px;background:var(--ink);color:#fff;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;transition:background .35s,color .35s,box-shadow .35s,transform .35s var(--ease)}
+  .btn::after{content:"→";font-size:14px;letter-spacing:0;transition:transform .45s var(--ease)}
+  .btn:hover::after{transform:translateX(5px)}
+  .btn.line{background:transparent;color:inherit;box-shadow:inset 0 0 0 1.5px currentColor}
+  .btn.w{background:#fff;color:var(--ink)}
+  nav .btn{padding:12px 20px}
+
+  /* ---------- первый экран: все вкусы в ряд ---------- */
+  /* у первого экрана нет своего слоя: белый фон картинок бутылок растворяется прямо на фоне страницы */
+  .hero{position:relative;height:100vh;height:100svh;min-height:600px;display:flex;flex-direction:column;align-items:center;padding:96px var(--pad) 0;text-align:center;--ho:1;overflow-x:clip}
+  .hero>.cap{color:var(--muted)}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .fade{opacity:0;transform:translateY(18px);transition:opacity 1s ease,transform 1.2s var(--ease);transition-delay:var(--dl,.5s)}
+  .ready .fade{opacity:var(--ho,1);transform:none}
+  .hero h1{font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:min(15vh,15vw);line-height:.84;margin-top:1.6vh;letter-spacing:-.005em;opacity:var(--ho,1)}
+  .hero h1 .l{display:block;overflow:hidden;padding-top:.06em}
+  .hero h1 .l>span{display:block;transform:translateY(110%);transition:transform 1.3s var(--ease);transition-delay:calc(var(--j,0)*120ms + .15s)}
+  .ready .hero h1 .l>span{transform:none}
+  #hword{transition:color .35s}
+  .row{position:absolute;left:0;right:0;bottom:6.5vh;display:flex;justify-content:center;padding:0 var(--pad)}
+  .slot{position:relative;width:min(23%,290px);display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:0;transform:translateY(9vh)}
+  .ready .slot{opacity:1;transform:none;transition:opacity 1s ease,transform 1.4s var(--ease);transition-delay:calc(var(--k)*110ms + .45s)}
+  .box{position:relative;height:var(--sh);aspect-ratio:1/2;flex:none;pointer-events:none}
+  .shot{position:absolute;inset:0;overflow:hidden;mix-blend-mode:multiply;opacity:calc(var(--ho,1)*var(--dim,1));transition:transform .9s var(--ease),opacity .35s}
+  .shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+  .shot video{position:absolute;left:0;top:0;width:200%;height:100%;max-width:none;object-fit:fill;display:block;opacity:0;-webkit-clip-path:inset(0 50.5% 0 0);clip-path:inset(0 50.5% 0 0)}
+  .shot video.on{opacity:1}
+  .slot:hover .shot{transform:translateY(-2.4vh) scale(1.06)}
+  .row.hov .slot:not(:hover){--dim:.38}
+  .slot.gone .shot{visibility:hidden}
+  .nm{margin-top:-2.2vh;font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:clamp(22px,3.4vh,36px);line-height:1;display:flex;align-items:center;gap:9px;opacity:calc(var(--ho,1)*var(--dim,1));transition:opacity .35s,color .35s}
+  .nm::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+  .slot:hover .nm{color:var(--c)}
+  .hint{position:absolute;left:0;right:0;bottom:2vh;color:var(--muted);--dl:1.2s}
+
+  /* ---------- цветные экраны вкусов ---------- */
+  .scene{position:relative;z-index:2;height:100vh;height:100svh;min-height:600px;color:var(--ink);overflow:hidden}
+  .gname{position:absolute;left:0;right:0;top:50%;margin-top:-.43em;text-align:center;color:#fff;font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:min(33vw,60vh);line-height:.86;white-space:nowrap;pointer-events:none;will-change:transform}
+  .s-top{position:absolute;left:var(--pad);right:var(--pad);top:104px;display:flex;justify-content:space-between;gap:20px;opacity:.7}
+  .s-left{position:absolute;left:var(--pad);bottom:7vh;width:min(360px,27vw)}
+  .s-left h2{font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:clamp(34px,5vh,54px);line-height:.9;margin-bottom:12px}
+  .s-left p{font-size:17px;line-height:1.55;margin-bottom:22px;opacity:.82}
+  .s-right{position:absolute;right:var(--pad);bottom:7vh;width:min(330px,25vw);list-style:none;border-top:1px solid rgba(18,18,18,.18)}
+  .s-right li{display:flex;justify-content:space-between;align-items:baseline;gap:18px;padding:14px 0;border-bottom:1px solid rgba(18,18,18,.18)}
+  .s-right b{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.6}
+  .s-right span{font-size:16px;font-weight:700;text-align:right}
+  .reveal>*{opacity:0;transform:translateY(26px);transition:opacity .9s ease,transform 1.1s var(--ease);transition-delay:calc(var(--i,0)*90ms + .1s)}
+  .reveal.in>*{opacity:1;transform:none}
+
+  /* ---------- где купить, мерч ---------- */
+  .block{position:relative;z-index:6;background:#fff;padding:14vh var(--pad) 10vh}
+  .block-head{display:flex;justify-content:space-between;align-items:flex-end;gap:28px;margin-bottom:6vh}
+  .block h2{font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:clamp(64px,13vw,200px);line-height:.84;margin-top:14px}
+  .block .cap{color:var(--muted)}
+  .block-head p{max-width:340px;font-size:16px;line-height:1.6;color:var(--text)}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .tile{position:relative;border-radius:24px;background:var(--soft);padding:26px 26px 30px;min-height:230px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;transition:background .5s,color .5s}
+  .tile:hover{background:var(--ink);color:#fff}
+  .tile .no{font-family:var(--disp);font-weight:800;font-size:22px;color:var(--muted)}
+  .tile h3{font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:clamp(34px,3.6vw,52px);line-height:.92}
+  .tile p{margin-top:10px;font-size:15px;line-height:1.5;opacity:.75;max-width:30ch}
+  .tile .ar{position:absolute;right:24px;top:22px;font-size:22px;transition:transform .5s var(--ease)}
+  .tile:hover .ar{transform:translate(4px,-4px)}
+  .merch{padding-top:6vh}
+  .block{scroll-margin-top:0}
+  .goods{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .good{border-radius:24px;background:var(--soft);overflow:hidden}
+  .good .ph{aspect-ratio:1/1;overflow:hidden}
+  .good img{width:100%;height:100%;object-fit:cover;display:block;mix-blend-mode:multiply;transition:transform 1.2s var(--ease)}
+  .good:hover img{transform:scale(1.06)}
+  .good .tx{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:18px 22px 22px}
+  .good h3{font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:30px;line-height:1}
+  .good span{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  footer{position:relative;z-index:6;background:#fff;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:26px var(--pad) 32px;color:var(--muted);border-top:1px solid var(--line)}
+  footer b{color:var(--ink)}
+
+  @media (max-width:759px){
+    :root{--sh:min(40vh,86vw)}
+    .links,.tag{display:none}
+    nav{padding:14px 18px}
+    .brand img{height:30px}
+    nav .btn{padding:11px 16px;font-size:11px}
+    .hero{padding:84px 12px 0}
+    .hero>.cap{font-size:9.5px;letter-spacing:.14em;max-width:30ch;line-height:1.5}
+    .hero h1{font-size:23vw;margin-top:2vh}
+    .row{bottom:8vh;padding:0 6px}
+    .slot{width:25%}
+    .nm{font-size:19px;gap:6px;margin-top:-1.2vh}
+    .nm::before{width:6px;height:6px}
+    .hint{font-size:10px}
+    .gname{top:13vh;margin-top:0;font-size:35vw}
+    .s-top{top:76px;left:18px;right:18px}
+    .s-top .cap{font-size:10px}
+    .s-left{left:18px;right:18px;width:auto;bottom:4vh;text-align:center}
+    .s-left h2{display:none}
+    .s-left p{font-size:15.5px;margin-bottom:14px}
+    .s-right{display:none}
+    .block{padding:9vh 18px 7vh}
+    .block-head{flex-direction:column;align-items:flex-start;gap:14px;margin-bottom:4vh}
+    .tiles,.goods{grid-template-columns:1fr;gap:10px}
+    .tile{min-height:170px;border-radius:20px}
+    .good{border-radius:20px}
+    .good .ph{aspect-ratio:4/3}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .reveal>*,.fade,.hero h1 .l>span,.slot{opacity:1;transform:none;transition:none}
+  }
+</style>
+</head>
+<body class="loading">
+
+<div class="loader" id="loader"><img src="logo.svg" alt="Шоро"><div class="bar"><i id="bar"></i></div><div class="pct"><span id="pct">0</span> %</div></div>
+<div class="bg" id="bgA"></div><div class="bg" id="bgB"></div>
+<div class="flood" id="flood"></div>
+<video class="burst" id="burst" muted playsinline preload="auto" disablepictureinpicture></video>
+<video class="burst b2" id="burst2" muted playsinline preload="none" disablepictureinpicture></video>
+
+<div class="stage off" id="stage" aria-hidden="true">
+  <div class="fx" id="fx"><div class="sdw"></div><canvas id="glc" width="600" height="1200"></canvas></div>
+  <div class="src"><video class="on" id="va" muted playsinline preload="auto" disablepictureinpicture></video><video id="vb" muted playsinline preload="auto" disablepictureinpicture></video></div>
+  <div class="hit" id="hit"></div>
+</div>
+
+<nav id="nav">
+  <a class="brand" href="#top"><img src="logo.svg" alt="Шоро"><span class="tag">концепт</span></a>
+  <div class="links"><a href="#top">Вкусы</a><a href="#buy">Где купить</a><a href="#merch">Мерч</a></div>
+  <a class="btn line" href="#buy">Заказать</a>
+</nav>
+
+<main>
+<section class="hero" id="top">
+  <div class="cap fade" style="--dl:.7s">Национальные напитки Кыргызстана · с 1992 года</div>
+  <h1><span class="l"><span>Выбери свой</span></span><span class="l" style="--j:1"><span id="hword">вкус</span></span></h1>
+  <div class="row" id="row"></div>
+  <div class="hint cap fade" id="hint">Нажмите на бутылку</div>
+</section>
+
+<section class="block" id="buy">
+  <div class="block-head reveal">
+    <div><div class="cap">Где купить</div><h2>Шоро рядом</h2></div>
+    <p>В магазинах у дома и в бочках на улицах Бишкека. Для кафе, магазинов и экспорта — оптовые поставки.</p>
+  </div>
+  <div class="tiles reveal">
+    <a class="tile" href="#buy"><span class="no">01</span><span class="ar">↗</span><div><h3>В магазинах</h3><p>Бутылки Шоро — в магазинах и супермаркетах по всей стране.</p></div></a>
+    <a class="tile" href="#buy"><span class="no">02</span><span class="ar">↗</span><div><h3>В бочках</h3><p>Летом — прохладный стакан из бочки на улицах Бишкека.</p></div></a>
+    <a class="tile" href="#buy"><span class="no">03</span><span class="ar">↗</span><div><h3>Оптом</h3><p>Поставки для кафе, магазинов и на экспорт.</p></div></a>
+  </div>
+</section>
+
+<section class="block merch" id="merch">
+  <div class="block-head reveal">
+    <div><div class="cap">Мерч · идея</div><h2>Шоро с собой</h2></div>
+    <p>Футболка, кепка и шопер с тем самым логотипом — для тех, кто вырос на максыме.</p>
+  </div>
+  <div class="goods reveal">
+    <div class="good"><div class="ph"><img src="merch-1.jpg" alt="Белая футболка с логотипом Шоро" loading="lazy"></div><div class="tx"><h3>Футболка</h3><span>белая</span></div></div>
+    <div class="good"><div class="ph"><img src="merch-2.jpg" alt="Красная кепка с логотипом Шоро" loading="lazy"></div><div class="tx"><h3>Кепка</h3><span>красная</span></div></div>
+    <div class="good"><div class="ph"><img src="merch-3.jpg" alt="Шопер с логотипом Шоро" loading="lazy"></div><div class="tx"><h3>Шопер</h3><span>холщовый</span></div></div>
+  </div>
+</section>
+</main>
+
+<footer><span class="cap">Концепт сайта для «Шоро» · не официальный сайт компании</span><span class="cap">Дизайн и разработка — <b>SOZ</b></span></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  // b0 — с какой секунды показывать анимацию вкуса, bF — когда цвет начинает заливать экран
+  const FL = [
+    {id:'maksym',  name:'Максым', color:'#DF2A2F', bg:'#EDA297', glow:'#F8D3CC', tag:'злаковый напиток', b0:1.2, bF:4.3,
+     lead:'Злаковый, густой, с лёгкой кислинкой. Тот самый вкус из бочки на углу — теперь и дома.',
+     facts:[['Основа','злаки'],['Вкус','хлебный, кисловатый'],['Когда','в жару, к самсе и лагману']]},
+    {id:'chalap',  name:'Чалап', color:'#1C74CE', bg:'#98BFEB', glow:'#CFE2F8', tag:'кисломолочный напиток', b0:1.0, bF:4.3,
+     lead:'Кисломолочный и чуть солёный. Освежает, когда на улице +35.',
+     facts:[['Основа','кисломолочная'],['Вкус','солоноватый, свежий'],['Когда','к плову и шашлыку']]},
+    {id:'jarma',   name:'Жарма', color:'#2B8A3C', bg:'#9DD3A6', glow:'#CFEBD4', tag:'злаковый напиток', b0:1.2, bF:4.2,
+     lead:'Самый плотный в линейке. Сытный злаковый напиток — его берут в дорогу и в горы.',
+     facts:[['Основа','злаки'],['Вкус','насыщенный, сытный'],['Когда','в дорогу и после спорта']]},
+    {id:'aralash', name:'Аралаш', color:'#9B846C', bg:'#DBC8B3', glow:'#F0E5D8', tag:'смешанный напиток', b0:.6, bF:3.4,
+     lead:'«Аралаш» по-кыргызски — «смесь». Для тех, кто не может выбрать один вкус.',
+     facts:[['Основа','смешанная'],['Вкус','мягкий'],['Когда','на обед и перекус']]},
+  ];
+  const N = FL.length;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+  const smooth = (a, b, t) => { t = clamp((t - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const easeInOut = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  const easeOut = k => 1 - Math.pow(1 - k, 4);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const nextFrame = () => new Promise(r => requestAnimationFrame(r));
+
+  const root = document.documentElement, body = document.body;
+  const stage = $('#stage'), hit = $('#hit'), burst = $('#burst'), flood = $('#flood'), bgA = $('#bgA'), bgB = $('#bgB'), nav = $('#nav');
+  const hero = $('#top'), row = $('#row'), hword = $('#hword'), hint = $('#hint');
+  let act = $('#va'), spare = $('#vb');
+
+  /* ---------- разметка: ряд бутылок и экраны вкусов ---------- */
+  row.innerHTML = FL.map((F, k) => `
+    <button class="slot" data-k="${k}" style="--k:${k};--c:${F.color}" aria-label="${F.name}">
+      <span class="box"><span class="shot"><img src="${F.id}.jpg" alt=""><video muted playsinline preload="none" disablepictureinpicture></video></span></span>
+      <span class="nm">${F.name}</span>
+    </button>`).join('');
+  hero.insertAdjacentHTML('afterend', FL.map((F, k) => `
+    <section class="scene" id="f-${F.id}" data-k="${k}">
+      <div class="gname" aria-hidden="true">${F.name}</div>
+      <div class="s-top"><span class="cap">0${k + 1} / 0${N}</span><span class="cap">${F.tag}</span></div>
+      <div class="s-left reveal"><h2>${F.name}</h2><p>${F.lead}</p><a class="btn" href="#buy">Где купить</a></div>
+      <ul class="s-right reveal">${F.facts.map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join('')}</ul>
+    </section>`).join(''));
+  const slots = $$('.slot').map(el => ({el, box:$('.box', el), vid:$('video', el)}));
+  const scenes = $$('.scene'), gnames = $$('.gname');
+  const secs = [hero, ...scenes, $('#buy')];
+  $$('.reveal').forEach(el => [...el.children].forEach((c, i) => c.style.setProperty('--i', i)));
+  const paint = F => `radial-gradient(ellipse 58% 62% at 50% 56%, ${F.glow}, ${F.bg} 80%)`;   // мягкий свет за бутылкой
+  const COLORS = ['#ffffff', ...FL.map(paint), paint(FL[N - 1])];
+
+  /* ---------- плавный скролл ---------- */
+  let lenis = null;
+  try { if (window.Lenis && !reduced){ lenis = new Lenis({lerp:.1, smoothWheel:true}); lenis.stop(); window.__lenis = lenis; } } catch (e) { lenis = null; }
+  const goTo = (target, o = {}) => {
+    if (lenis) lenis.scrollTo(target, Object.assign({duration:1.6, easing:t => 1 - Math.pow(1 - t, 4)}, o));
+    else if (typeof target === 'number') scrollTo({top:target, behavior: reduced || o.immediate ? 'auto' : 'smooth'});
+    else { const el = typeof target === 'string' ? $(target) : target; if (el) el.scrollIntoView({behavior: reduced ? 'auto' : 'smooth'}); }
+  };
+
+  /* ---------- загрузка роликов целиком в память: перемотка мгновенная ---------- */
+  const cache = {};
+  const load = url => cache[url] || (cache[url] = fetch(url).then(r => { if (!r.ok) throw 0; return r.blob(); }).then(b => URL.createObjectURL(b)).catch(() => url));
+  const spinURL = k => load(`spin-${FL[k].id}.mp4`), burstURL = k => load(`burst-${FL[k].id}.mp4`);
+  async function loadWithProgress(url, cb){
+    try {
+      const r = await fetch(url); if (!r.ok) throw 0;
+      const total = +r.headers.get('content-length') || 0;
+      if (!r.body || !total){ const b = await r.blob(); cb(1); return URL.createObjectURL(b); }
+      const reader = r.body.getReader(), chunks = []; let got = 0;
+      for (;;){ const {done, value} = await reader.read(); if (done) break; chunks.push(value); got += value.length; cb(got / total); }
+      return URL.createObjectURL(new Blob(chunks, {type:'video/mp4'}));
+    } catch (e) { cb(1); return url; }
+  }
+  function setSrc(v, url, prime){
+    return new Promise(res => {
+      if (v.dataset.url === url && v.readyState >= 2) return res();
+      v.dataset.url = url;
+      let done = false;
+      const fin = () => { if (done) return; done = true; v.removeEventListener('loadeddata', fin);
+        if (prime){ const p = v.play(); if (p && p.then) p.then(() => v.pause()).catch(() => {}); }   // iOS: показать первый кадр
+        res(); };
+      v.addEventListener('loadeddata', fin);
+      v.src = url; v.load();
+      setTimeout(fin, 5000);
+    });
+  }
+
+  /* ---------- размеры ---------- */
+  let W = 0, H = 0, mobile = false, slot0 = {cx:.5, cy:.5, h:.5};
+  function layoutRect(el){ let x = 0, y = 0, e = el; while (e){ x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; } return {left:x, top:y, width:el.offsetWidth, height:el.offsetHeight}; }
+  function boxState(k){
+    const r = layoutRect(slots[k].box);                       // координаты на странице, без анимаций
+    return {cx:(r.left + r.width / 2) / W, cy:(r.top + r.height / 2) / H, h:r.height / H};
+  }
+  function resize(){
+    W = root.clientWidth; H = window.innerHeight; mobile = W < 760;
+    stage.style.width = (H / 2) + 'px'; stage.style.height = H + 'px';
+    slot0 = boxState(0);
+    if (window.SHORO){ const q = SHORO.s; q.W = W; q.H = H; q.mobile = mobile; SHORO.emit('resize', {W, H, mobile}); }
+  }
+  addEventListener('resize', resize);
+  const sceneState = () => mobile ? {cx:.5, cy:.45, h:.60} : {cx:.5, cy:.53, h:.82};
+  function scrollP(){
+    const y = scrollY;
+    for (let i = secs.length - 1; i >= 0; i--){
+      const top = secs[i].offsetTop;
+      if (y >= top){
+        const next = secs[i + 1] ? secs[i + 1].offsetTop : top + secs[i].offsetHeight;
+        return Math.min(secs.length - 1, i + Math.min(1, (y - top) / (next - top)));
+      }
+    }
+    return 0;
+  }
+
+  /* ---------- бутылка с настоящей прозрачностью (WebGL) ---------- */
+  const glc = $('#glc'); let gl = null, glOK = false, dirty = true;
+  (() => {
+    try {
+      gl = glc.getContext('webgl', {premultipliedAlpha:true, alpha:true, antialias:false});
+      if (!gl) return;
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw 0; return o; };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 p;varying vec2 uv;void main(){uv=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}'));
+      gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, 'precision mediump float;uniform sampler2D t;varying vec2 uv;void main(){vec3 c=texture2D(t,vec2(uv.x*.5,uv.y)).rgb;float a=smoothstep(.08,.92,texture2D(t,vec2(.5+uv.x*.5,uv.y)).g);gl_FragColor=vec4(c*a,a);}'));
+      gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw 0; gl.useProgram(pr);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.viewport(0, 0, glc.width, glc.height); gl.clearColor(0, 0, 0, 0);
+      glOK = true;
+    } catch (e) { glOK = false; }
+    if (!glOK) stage.classList.add('nogl');
+  })();
+  function drawBottle(v){
+    if (!glOK || v.readyState < 2) return false;
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v); } catch (e) { return false; }
+    gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 6); return true;
+  }
+  [act, spare].forEach(v => ['seeked', 'loadeddata', 'timeupdate', 'canplay'].forEach(ev => v.addEventListener(ev, () => { dirty = true; })));
+
+  /* ---------- состояние ---------- */
+  let dur = 7.875, P = 0, drag = 0, dragVel = 0, dragging = false, scaleNow = 1;
+  let busy = false, ov = null, burstSlot = -1, flooding = false, loadingSpare = false, stageShown = false, ready = false;
+  function applyTime(v, a){
+    let fr = a - Math.floor(a); if (fr > .9993 || fr < .0007) fr = 0;
+    const tt = Math.min(fr * dur, dur - .03);
+    if (v.readyState >= 1 && !v.seeking && Math.abs(v.currentTime - tt) > .015){ try { v.currentTime = tt; } catch (e) {} }
+  }
+  async function prepare(v, k){
+    loadingSpare = true;
+    try { await setSrc(v, await spinURL(k), true); v.dataset.f = k; } finally { loadingSpare = false; }
+  }
+  function swapVideos(){ spare.classList.add('on'); act.classList.remove('on'); [act, spare] = [spare, act]; dirty = true; }
+  // держим на экране нужный вкус, соседний — наготове в запасном ролике
+  function ensureFlavor(idx, q){
+    if (+act.dataset.f !== idx){
+      if (+spare.dataset.f === idx && spare.readyState >= 2) swapVideos();
+      else if (!loadingSpare) prepare(spare, idx);
+      return;
+    }
+    const nb = clamp(idx + ((q - Math.round(q)) >= 0 ? 1 : -1), 0, N - 1);
+    if (nb !== idx && +spare.dataset.f !== nb && !loadingSpare) prepare(spare, nb);
+  }
+
+  /* ---------- клик по бутылке: анимация вкуса → цвет заливает экран → экран вкуса ---------- */
+  function floodTo(color, x, y, ms){
+    return new Promise(res => {
+      flood.style.background = color; flood.style.visibility = 'visible';
+      const R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y)) + 30, t0 = performance.now();
+      const step = now => {
+        const k = clamp((now - t0) / ms, 0, 1);
+        flood.style.clipPath = clipOf(x, y, easeInOut(k) * R, R, 'click');
+        if (k < 1) requestAnimationFrame(step); else res();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  async function openFlavor(k){
+    if (busy || !ready) return;
+    busy = true; if (lenis) lenis.stop();
+    hint.style.visibility = 'hidden'; row.classList.remove('hov'); setWord(FL[k].name, FL[k].color);
+    const F = FL[k], s = slots[k];
+    if (!s.vid.paused && !s.vid.ended){                       // если бутылка крутилась — быстро докрутить до этикетки
+      s.vid.playbackRate = 8;
+      await new Promise(res => { const f = () => { s.vid.removeEventListener('ended', f); res(); }; s.vid.addEventListener('ended', f); setTimeout(res, 1300); });
+    }
+    const r = $('.shot', s.el).getBoundingClientRect();
+    SH.emit('open:start', {k, rect:r});
+    const stageReady = (async () => {                         // главный ролик этого вкуса, этикеткой вперёд
+      if (+act.dataset.f !== k){ while (loadingSpare) await wait(30); await prepare(spare, k); swapVideos(); }
+      try { act.currentTime = 0; } catch (e) {}
+    })();
+    // 1. анимация вкуса вокруг бутылки
+    const burl = reduced ? null : await Promise.race([burstURL(k), wait(1500).then(() => null)]);
+    if (burl){
+      burst.style.height = r.height + 'px'; burst.style.width = (r.height * 1.6) + 'px';
+      burst.style.left = (r.left + r.width / 2 - r.height * .8) + 'px'; burst.style.top = r.top + 'px';
+      await setSrc(burst, burl);
+      try { burst.currentTime = F.b0; } catch (e) {}
+      burst.playbackRate = 1.6;
+      const shown = new Promise(res => { const f = () => { burst.removeEventListener('playing', f); res(); }; burst.addEventListener('playing', f); setTimeout(res, 900); });
+      const p = burst.play(); if (p && p.catch) p.catch(() => {});
+      await shown; burst.classList.add('on'); await wait(60); burstSlot = k;
+      SH.emit('open:burst', {k, rect:r});
+      const tEnd = performance.now() + 3200;
+      while (burst.currentTime < F.bF && !burst.ended && performance.now() < tEnd) await nextFrame();
+    } else await wait(120);
+    await stageReady;
+    // 2. цвет вкуса заливает экран от бутылки
+    ov = {st:{cx:(r.left + r.width / 2) / W, cy:(r.top + r.height / 2) / H, h:r.height / H}, k, t:1};
+    stage.classList.add('lift'); flooding = true;
+    SH.emit('open:flood', {k, x:r.left + r.width / 2, y:r.top + r.height * .56, color:F.color, bg:F.bg, rect:r, ms:reduced ? 1 : 950});
+    await floodTo(paint(F), r.left + r.width / 2, r.top + r.height * .56, reduced ? 1 : 950);
+    // 3. под заливкой переносимся на экран вкуса
+    const y = scenes[k].offsetTop;
+    if (lenis) lenis.scrollTo(y, {immediate:true, force:true}); else scrollTo(0, y);
+    P = k + 1; burst.classList.remove('on'); try { burst.pause(); } catch (e) {}
+    burstSlot = -1; setWord('вкус', '');
+    await nextFrame(); await nextFrame();
+    flood.style.visibility = 'hidden'; flooding = false;
+    SH.emit('open:arrive', {k});
+    // 4. бутылка плавно встаёт на своё место
+    const t0 = performance.now(), T = reduced ? 1 : 1100;
+    await new Promise(res => { const step = now => { const q = clamp((now - t0) / T, 0, 1); ov.t = 1 - easeOut(q); if (q < 1) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); });
+    ov = null; stage.classList.remove('lift'); hint.style.visibility = '';
+    busy = false; if (lenis) lenis.start();
+    SH.emit('open:end', {k});
+  }
+
+  /* ---------- ряд бутылок: поворот при наведении, слово в заголовке ---------- */
+  let wordTok = 0;
+  function setWord(text, color){
+    const tok = ++wordTok;
+    if (SH.hooks.word && SH.hooks.word(text, color, hword) === true) return;
+    if (hword.textContent.toLowerCase() === text.toLowerCase()){ hword.style.color = color; return; }
+    if (reduced){ hword.textContent = text; hword.style.color = color; return; }
+    hword.style.transition = 'transform .22s cubic-bezier(.7,0,.84,0),color .35s'; hword.style.transform = 'translateY(-110%)';
+    setTimeout(() => {
+      if (tok !== wordTok) return;
+      hword.textContent = text; hword.style.color = color;
+      hword.style.transition = 'none'; hword.style.transform = 'translateY(110%)'; hword.getBoundingClientRect();
+      hword.style.transition = 'transform .7s cubic-bezier(.16,1,.3,1),color .35s'; hword.style.transform = 'translateY(0)';
+    }, 230);
+  }
+  slots.forEach((s, k) => {
+    let inside = false; const vid = s.vid;
+    s.el.addEventListener('pointerenter', async e => {
+      if (busy || !ready) return;
+      inside = true; row.classList.add('hov'); setWord(FL[k].name, FL[k].color);
+      SH.emit('slot:enter', {k, el:s.el});
+      if (e.pointerType !== 'mouse' || reduced) return;
+      await setSrc(vid, await spinURL(k)); if (!inside) return;
+      if (vid.ended || vid.currentTime > dur - .15) vid.currentTime = 0;
+      vid.playbackRate = 1.5; const p = vid.play(); if (p && p.catch) p.catch(() => {});
+    });
+    s.el.addEventListener('pointerleave', () => {
+      inside = false; if (!vid.paused) vid.playbackRate = 7;
+      if (!busy){ row.classList.remove('hov'); setWord('вкус', ''); }
+      SH.emit('slot:leave', {k, el:s.el});
+    });
+    vid.addEventListener('playing', () => vid.classList.add('on'));
+    vid.addEventListener('ended', () => {
+      if (inside && !busy){ vid.currentTime = 0; vid.playbackRate = 1.5; const p = vid.play(); if (p && p.catch) p.catch(() => {}); }
+      else vid.classList.remove('on');
+    });
+    s.el.addEventListener('click', () => openFlavor(k));
+  });
+  document.addEventListener('click', e => {
+    const link = e.target.closest('a[href^="#"]');
+    if (link && link.getAttribute('href').length > 1 && $(link.getAttribute('href'))){ e.preventDefault(); if (!busy) goTo(link.getAttribute('href')); }
+  });
+
+  /* ---------- бутылку можно крутить мышкой и пальцем ---------- */
+  let lastX = 0, lastMove = 0, downT = 0, moved = 0;
+  hit.addEventListener('pointerdown', e => {
+    if (busy) return;
+    if (e.pointerType === 'mouse') e.preventDefault();
+    dragging = true; lastX = e.clientX; downT = lastMove = performance.now(); moved = 0; dragVel = 0;
+    SH.emit('drag:start', {});
+    try { hit.setPointerCapture(e.pointerId); } catch (err) {}
+    hit.classList.add('grab');
+  });
+  hit.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const now = performance.now(), dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx);
+    const bw = Math.max(40, (H / 2) * scaleNow * .5);
+    const d = -dx / (2 * bw); drag += d;
+    const dtm = Math.max((now - lastMove) / 1000, .004); lastMove = now;
+    dragVel = clamp(lerp(dragVel, d / dtm, .5), -3, 3);
+  });
+  const endDrag = e => {
+    if (!dragging) return; dragging = false; hit.classList.remove('grab');
+    SH.emit('drag:end', {vel:dragVel});
+    if (e.type === 'pointerup' && moved < 6 && performance.now() - downT < 450){ dragVel = 0; SH.emit('tap', {k:SH.s.idx, x:e.clientX, y:e.clientY}); }
+  };
+  hit.addEventListener('pointerup', endDrag); hit.addEventListener('pointercancel', endDrag);
+
+  /* ---------- появление текста ---------- */
+  const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } }), {threshold:.2});
+  $$('.reveal').forEach(el => io.observe(el));
+
+  /* ---------- кадр ---------- */
+  let last = performance.now(), pctNow = 0, pctTo = 0, bgKey = '', vel = 0, lastSY = scrollY, rest = 0, settled = -1;
+  const bar = $('#bar'), pct = $('#pct');
+  function frame(now){
+    const dt = Math.min((now - last) / 1000, .05); last = now;
+    if (lenis) lenis.raf(now);
+    if (pctNow < 100){ pctNow = Math.min(100, lerp(pctNow, pctTo * 100, 1 - Math.pow(.004, dt)) + .15); pct.textContent = Math.round(pctNow); bar.style.transform = `scaleX(${(pctNow / 100).toFixed(3)})`; }
+    const target = scrollP();
+    if (!busy || !ov) P = lerp(P, target, 1 - Math.pow(lenis ? 1e-7 : .0015, dt)); else if (ov && ov.t < 1) P = ov.k + 1;
+
+    // где стоит главная бутылка
+    const S = sceneState();
+    let st = S;
+    if (P < 1){ const f = smooth(0, 1, P); st = {cx:lerp(slot0.cx, S.cx, f), cy:lerp(slot0.cy - scrollY / H, S.cy, f), h:lerp(slot0.h, S.h, f)}; }
+    if (ov){ const t = ov.t; st = {cx:lerp(st.cx, ov.st.cx, t), cy:lerp(st.cy, ov.st.cy, t), h:lerp(st.h, ov.st.h, t)}; }
+    scaleNow = st.h;
+    const bx = st.cx * W - st.h * H / 4, by = st.cy * H - st.h * H / 2;
+    stage.style.transform = `translate3d(${bx.toFixed(1)}px,${by.toFixed(1)}px,0) scale(${st.h.toFixed(4)})`;
+    const show = ready && (ov ? true : P > .004);
+    if (show !== stageShown){ stageShown = show; stage.style.opacity = show ? 1 : 0; }
+    stage.classList.toggle('off', !show || busy || P < .9);
+    slots.forEach((s, i) => s.el.classList.toggle('gone', (i === 0 && P > .004 && !ov) || (ov && ov.k === i) || burstSlot === i));
+
+    // первый экран уходит
+    const ho = 1 - smooth(.06, .5, P);
+    hero.style.setProperty('--ho', ho.toFixed(3)); hero.style.pointerEvents = ho < .5 || busy ? 'none' : '';
+
+    // цвет: следующий заливает экран кругом от бутылки
+    const pc = clamp(P, 0, N + .999), i = Math.floor(pc), fr = pc - i;
+    const cxp = st.cx * W, cyp = st.cy * H + st.h * H * .06, R = Math.hypot(Math.max(cxp, W - cxp), Math.max(cyp, H - cyp)) + 30;
+    const rr = smooth(.1, .8, fr) * R, live = SH.hooks.clip && rr > 1 && rr < R - 1;      // пока заливка идёт, форма может «жить»
+    const key = `${i}|${rr.toFixed(0)}|${cxp.toFixed(0)}|${cyp.toFixed(0)}`;
+    if (key !== bgKey || live){ bgKey = key;
+      if (bgA.dataset.c !== COLORS[i]){ bgA.dataset.c = COLORS[i]; bgA.style.background = COLORS[i]; }
+      const cb = COLORS[Math.min(i + 1, COLORS.length - 1)];
+      if (bgB.dataset.c !== cb){ bgB.dataset.c = cb; bgB.style.background = cb; }
+      bgB.style.clipPath = clipOf(cxp, cyp, rr, R, 'scroll'); }
+
+    nav.classList.toggle('solid', P > N + .9);
+
+    // огромные названия едут медленнее страницы
+    gnames.forEach((g, n) => { const d = P - (n + 1); if (Math.abs(d) < 1.2) g.style.transform = `translate3d(${(d * -6).toFixed(2)}vw,${(d * (mobile ? 0 : 18)).toFixed(2)}vh,0)`; });
+
+    // поворот: полный оборот между экранами, вкус меняется, когда бутылка спиной
+    if (!dragging){
+      drag += dragVel * dt; dragVel *= Math.pow(.05, dt);
+      if (Math.abs(dragVel) < .08){ const tg = Math.round(drag); drag += (tg - drag) * (1 - Math.pow(.01, dt)); if (Math.abs(tg - drag) < .002){ drag = 0; dragVel = 0; } }
+    }
+    const q = clamp(P, 0, N), qi = Math.min(Math.floor(q), N - 1), qx = q - qi;
+    const turns = ov ? 0 : qi + qx * qx * (3 - 2 * qx);
+    const idx = ov ? ov.k : clamp(Math.round(q) - 1, 0, N - 1);
+    if (ready && !(busy && !ov)) ensureFlavor(idx, q);
+    const a = turns + drag;
+    if (show && dirty && !act.seeking && drawBottle(act)) dirty = false;      // сначала рисуем готовый кадр, потом просим следующий
+    if (show){ applyTime(act, a); if (spare.dataset.f !== undefined && !loadingSpare) applyTime(spare, a); }
+
+    // состояние и события для модулей анимаций
+    const sy = scrollY; vel = lerp(vel, (sy - lastSY) / Math.max(dt, .001), 1 - Math.pow(.0005, dt)); lastSY = sy;
+    const q0 = SH.s;
+    q0.now = now; q0.dt = dt; q0.P = P; q0.target = target; q0.vel = vel; q0.W = W; q0.H = H; q0.mobile = mobile;
+    q0.ready = ready; q0.busy = busy; q0.ov = !!ov; q0.idx = idx; q0.show = show; q0.dragging = dragging; q0.angle = a;
+    q0.cx = st.cx; q0.cy = st.cy; q0.h = st.h; q0.bx = bx; q0.by = by; q0.bw = st.h * H / 2; q0.bh = st.h * H;
+    const sec = Math.round(clamp(P, 0, N + 1));
+    if (sec !== q0.sec){ const prev = q0.sec; q0.sec = sec; SH.emit('section', {i:sec, prev}); }
+    if (settled >= 0 && Math.abs(P - settled) > .25) settled = -1;
+    if (ready && !busy && Math.abs(vel) < 6 && Math.abs(target - P) < .003 && Math.abs(P - sec) < .02){
+      rest += dt; if (rest > .18 && settled !== sec){ settled = sec; SH.emit('settle', {i:sec}); }
+    } else rest = 0;
+    SH.emit('frame', q0);
+
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- точки подключения для модулей анимаций (папка fx/) ---------- */
+  const bus = {};
+  const clipOf = (x, y, r, R, kind) => (SH.hooks.clip && SH.hooks.clip(x, y, r, {R, kind, now:SH.s.now, W, H})) || `circle(${r.toFixed(1)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px)`;
+  const SH = window.SHORO = {
+    FL, N, reduced, paint, goTo, lerp, clamp, smooth, ease:{out:easeOut, inOut:easeInOut},
+    get lenis(){ return lenis; },
+    els:{root, body, stage, fx:$('#fx'), glc, hit, burst, burst2:$('#burst2'), flood, bgA, bgB, nav, hero, row, hword, hint, slots, scenes, gnames, secs},
+    s:{P:0, target:0, vel:0, W, H, mobile, ready:false, busy:false, ov:false, idx:0, sec:0, show:false, dragging:false, angle:0, cx:.5, cy:.5, h:.5, bx:0, by:0, bw:0, bh:0, now:0, dt:0},
+    hooks:{clip:null, word:null},
+    media:{spinURL, burstURL, setSrc},
+    openFlavor:k => openFlavor(k),
+    on(ev, fn){ (bus[ev] || (bus[ev] = [])).push(fn); return SH; },
+    emit(ev, a){ const l = bus[ev]; if (l) for (let i = 0; i < l.length; i++){ try { l[i](a); } catch (e) { console.error('[fx:' + ev + ']', e); } } },
+    css(id, text){ let el = document.getElementById(id); if (!el){ el = document.createElement('style'); el.id = id; document.head.appendChild(el); } el.textContent = text; return el; },
+    tween(ms, fn, ease){ ease = ease || easeOut; return new Promise(res => { const t0 = performance.now(); const step = now => { const k = clamp((now - t0) / Math.max(1, ms), 0, 1); fn(ease(k), k); if (k < 1) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); }); },
+  };
+
+  /* ---------- старт ---------- */
+  resize();
+  (async () => {
+    const t0 = performance.now();
+    const url = await loadWithProgress(`spin-${FL[0].id}.mp4`, p => { pctTo = p * .92; });
+    cache[`spin-${FL[0].id}.mp4`] = Promise.resolve(url);
+    await setSrc(act, url, true); act.dataset.f = 0;
+    if (isFinite(act.duration) && act.duration > 1) dur = act.duration;
+    try { await Promise.race([document.fonts.ready, wait(1800)]); } catch (e) {}
+    pctTo = 1; resize();
+    await wait(Math.max(500, 1300 - (performance.now() - t0)));
+    body.classList.remove('loading'); body.classList.add('ready'); $('#loader').classList.add('done');
+    if (lenis) lenis.start();
+    resize(); ready = true; SH.s.ready = true; SH.emit('ready', {});
+    setTimeout(resize, 2400);
+    // остальные ролики — в фоне, по очереди
+    let chain = Promise.resolve();
+    for (let k = 1; k < N; k++) chain = chain.then(() => spinURL(k));
+    for (let k = 0; k < N; k++) chain = chain.then(() => burstURL(k));
+  })();
+  requestAnimationFrame(frame);
+})();
+</script>
+<!-- модули анимаций: каждый сам по себе, подключается к window.SHORO -->
+<script src="fx/fx-type.js"></script>
+<script src="fx/fx-bottle.js"></script>
+<script src="fx/fx-flood.js"></script>
+<script src="fx/fx-burst.js"></script>
+<script src="fx/fx-cursor.js"></script>
+<script src="fx/fx-sections.js"></script>
+<script src="fx/fx-nav.js"></script>
+</body>
+</html>
